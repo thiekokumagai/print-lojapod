@@ -288,7 +288,7 @@ app.whenReady().then(() => {
         `;
       }
 
-      const titleText = showProductPrices ? "Pod & Mais" : "New Juices";
+      const titleText = showProductPrices ? "Loja Pod" : "New Juices";
 
       const receiptHtml = `
         <html>
