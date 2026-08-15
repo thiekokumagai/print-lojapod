@@ -1,6 +1,6 @@
-# Guia do Pod e Mais 🖨️
+# Guia do Loja pod 🖨️
 
-Acabamos de criar a estrutura base do **Pod e Mais** na pasta `c:\sites\podemais\print-agent`. Ele é um serviço Node.js independente que ficará responsável apenas por ouvir os pedidos e mandar para a impressora.
+Acabamos de criar a estrutura base do **Loja pod** na pasta `c:\sites\podemais\print-agent`. Ele é um serviço Node.js independente que ficará responsável apenas por ouvir os pedidos e mandar para a impressora.
 
 ## 1. Como testar o Agent localmente
 
@@ -48,7 +48,7 @@ Atualmente, sua API precisa avisar o agente quando um novo pedido chega. Para is
        const restaurantId = client.handshake.query.restaurant_id;
        if (restaurantId) {
          client.join(`restaurante_${restaurantId}`);
-         console.log(`Pod e Mais conectado para a loja ${restaurantId}`);
+         console.log(`Loja pod conectado para a loja ${restaurantId}`);
        }
      }
 

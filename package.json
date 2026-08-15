@@ -10,7 +10,7 @@
   },
   "build": {
     "appId": "com.vapeshop.printagent",
-    "productName": "Pod e Mais",
+    "productName": "Loja pod",
     "artifactName": "print-agent-setup.exe",
     "files": [
       "**/*",
@@ -27,7 +27,7 @@
       "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Pod e Mais"
+      "shortcutName": "Loja pod"
     }
   },
   "keywords": [],

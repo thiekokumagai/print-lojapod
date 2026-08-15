@@ -63,7 +63,7 @@ sequenceDiagram
 ### 3. Agente de Impressão Electron (`print-lojapod`)
 
 - **Armazenamento de Configuração (`config.json`)**:
-  - Salvo em `app.getPath('userData')` (Pasta `%APPDATA%/Pod e Mais/print_agent_config.json`).
+  - Salvo em `app.getPath('userData')` (Pasta `%APPDATA%/Loja pod/print_agent_config.json`).
   - Estrutura:
     ```json
     {

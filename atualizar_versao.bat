@@ -1,6 +1,6 @@
 @echo off
 echo ==============================================
-echo 🚀 INICIANDO BUILD DO Pod e Mais...
+echo 🚀 INICIANDO BUILD DA LOJA POD...
 echo ==============================================
 
 call npm run build
