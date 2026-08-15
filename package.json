@@ -1,6 +1,6 @@
 {
   "name": "print-agent",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Serviço de impressão automática para Vape Shop",
   "main": "main.js",
   "scripts": {
@@ -10,7 +10,7 @@
   },
   "build": {
     "appId": "com.vapeshop.printagent",
-    "productName": "Loja pod",
+    "productName": "Loja Pod",
     "artifactName": "print-agent-setup.exe",
     "files": [
       "**/*",
@@ -27,7 +27,7 @@
       "allowToChangeInstallationDirectory": false,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Loja pod"
+      "shortcutName": "Loja Pod"
     }
   },
   "keywords": [],
