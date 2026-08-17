@@ -21,7 +21,7 @@ app.setLoginItemSettings({
   path: app.getPath('exe'),
 });
 
-const API_URL = process.env.API_URL || 'https://ecommerce-core-api-production-3cc7.up.railway.app';
+const API_URL = process.env.API_URL || 'https://api.lojapod.com';
 
 function getConfigPath() {
   return path.join(app.getPath('userData'), 'print_agent_config.json');
