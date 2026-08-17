@@ -282,10 +282,11 @@ function openActivationWindow(initialError = '') {
 
 ipcMain.on('validate-token', async (event, token) => {
   try {
+    const cleanToken = token ? token.trim().toUpperCase() : '';
     const response = await fetch(`${API_URL}/api/stores/print-agent/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ token }),
+      body: JSON.stringify({ token: cleanToken }),
     });
 
     if (!response.ok) {
@@ -299,7 +300,7 @@ ipcMain.on('validate-token', async (event, token) => {
 
     const data = await response.json();
     saveConfig({
-      token,
+      token: cleanToken,
       store_id: data.storeId,
       store_name: data.storeName,
     });
