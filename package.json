@@ -29,7 +29,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Loja Pod",
       "installerIcon": "icon.ico",
-      "uninstallerIcon": "icon.ico"
+      "uninstallerIcon": "icon.ico",
+      "requestedExecutionLevel": "asInvoker"
     }
   },
   "keywords": [],
