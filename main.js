@@ -282,7 +282,7 @@ function openActivationWindow(initialError = '') {
 
 ipcMain.on('validate-token', async (event, token) => {
   try {
-    const cleanToken = token ? token.trim().toUpperCase() : '';
+    const cleanToken = token ? token.trim() : '';
     const response = await fetch(`${API_URL}/api/stores/print-agent/validate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -300,7 +300,7 @@ ipcMain.on('validate-token', async (event, token) => {
 
     const data = await response.json();
     saveConfig({
-      token: cleanToken,
+      token: data.printToken || cleanToken,
       store_id: data.storeId,
       store_name: data.storeName,
     });
@@ -401,11 +401,47 @@ async function imprimirPedido(pedido) {
       </div>
     `;
 
-    let pagamentoHtml = `
-      <div style="margin-top: 5px;">
-        <span class="bold">Pagamento:</span> ${pedido.paymentMethod || 'PIX'} (${pedido.paymentType || 'Entrega'})
-      </div>
-    `;
+    const tradutorMetodos = {
+      'CREDIT_CARD': 'Cartão de Crédito',
+      'credit_card': 'Cartão de Crédito',
+      'credit': 'Cartão de Crédito',
+      'debit': 'Cartão de Débito',
+      'DEBIT_CARD': 'Cartão de Débito',
+      'PIX': 'Pix',
+      'pix': 'Pix',
+      'CASH': 'Dinheiro',
+      'cash': 'Dinheiro',
+      'money': 'Dinheiro'
+    };
+
+    const statusPagamento = pedido.paymentStatus === 'PAID' ? 'PAGO' : (pedido.paymentStatus || '');
+    const metodoPagamento = pedido.paymentMethod || '';
+    const parcelas = pedido.paymentInstallments || pedido.installments || 1;
+    let pagamentoHtml = '';
+
+    if (statusPagamento === 'PAGO') {
+      pagamentoHtml += `<div class="bold" style="font-size: 11px; margin-top: 3px;">PAGO</div>`;
+    }
+
+    if (metodoPagamento) {
+      let chavePagamento = String(metodoPagamento).toLowerCase();
+      let txtCartao = tradutorMetodos[metodoPagamento] || tradutorMetodos[chavePagamento] || metodoPagamento;
+      if (parcelas > 1) txtCartao += ` em ${parcelas}x`;
+      pagamentoHtml += `<div style="margin-top: 4px;"><span class="bold">Forma de Pagamento:</span> ${txtCartao} (${pedido.paymentType || 'Entrega'})</div>`;
+
+      if ((chavePagamento === 'cash' || chavePagamento === 'dinheiro') && Number(pedido.changeAmount) > 0) {
+        let amountProv = Number(pedido.amountProvided || 0).toFixed(2).replace('.', ',');
+        let changeAmt = Number(pedido.changeAmount || 0).toFixed(2).replace('.', ',');
+        pagamentoHtml += `<div class="bold" style="font-size: 11px;">Troco para: R$ ${amountProv}</div>`;
+        pagamentoHtml += `<div class="bold" style="font-size: 12px;">Valor do troco: R$ ${changeAmt}</div>`;
+      }
+    } else {
+      pagamentoHtml += `
+        <div style="margin-top: 4px;">
+          <span class="bold">Forma de Pagamento:</span> PIX (${pedido.paymentType || 'Entrega'})
+        </div>
+      `;
+    }
 
     const receiptHtml = `
       <html>
