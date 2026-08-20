@@ -19,7 +19,8 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "icon.ico"
+      "icon": "icon.ico",
+      "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
       "oneClick": true,
@@ -29,8 +30,7 @@
       "createStartMenuShortcut": true,
       "shortcutName": "Loja Pod",
       "installerIcon": "icon.ico",
-      "uninstallerIcon": "icon.ico",
-      "requestedExecutionLevel": "asInvoker"
+      "uninstallerIcon": "icon.ico"
     }
   },
   "keywords": [],
