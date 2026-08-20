@@ -10,8 +10,7 @@ module.exports = {
   win: {
     target: 'nsis',
     icon: 'icon.ico',
-    requestedExecutionLevel: 'asInvoker',
-    sign: async () => {}
+    requestedExecutionLevel: 'asInvoker'
   },
   nsis: {
     oneClick: true,

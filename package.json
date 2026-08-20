@@ -1,11 +1,11 @@
 {
   "name": "print-agent",
-  "version": "1.0.2",
+  "version": "1.0.8",
   "description": "Serviço de impressão automática para Vape Shop",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder --config electron-builder.js --win",
+    "build": "node ./node_modules/electron-builder/out/cli/cli.js --config electron-builder.js --win",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
