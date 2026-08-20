@@ -3,6 +3,9 @@ echo ==============================================
 echo 🚀 INICIANDO BUILD DA LOJA POD...
 echo ==============================================
 
+taskkill /f /im "Loja Pod.exe" 2>nul
+taskkill /f /im "print-agent-setup.exe" 2>nul
+
 call npm run build
 
 echo.
