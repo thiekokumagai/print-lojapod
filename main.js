@@ -355,6 +355,19 @@ async function imprimirPedido(pedido) {
         if (variacao && String(variacao).trim() !== '') {
           nomeFormatado += `<br/><span class="bold">(${String(variacao).trim()})</span>`;
         }
+
+        // Se for combo, listar componentes detalhados para separação e conferência
+        const isCombo = item.isCombo || (item.comboSnapshot && item.comboSnapshot.items);
+        if (isCombo && item.comboSnapshot && Array.isArray(item.comboSnapshot.items)) {
+          nomeFormatado += `<div style="font-size: 11px; padding-left: 8px; margin-top: 2px; color: #333;">`;
+          item.comboSnapshot.items.forEach(comp => {
+            const compQtd = (comp.quantity || 1) * qtd;
+            const compNome = comp.productName || 'Produto';
+            const compVar = comp.variation ? ` (${comp.variation})` : '';
+            nomeFormatado += `• ${compQtd}x ${compNome}${compVar}<br/>`;
+          });
+          nomeFormatado += `</div>`;
+        }
         
         if (showProductPrices) {
           itensHtml += `
