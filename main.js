@@ -350,8 +350,10 @@ async function imprimirPedido(pedido) {
           
         let nome = item.nome || item.productName || 'Produto Genérico';
         let variacao = item.variation || item.variationString || item.variacao || '';
+        let categoria = item.categoryName || item.product?.category?.title || item.categoria || '';
 
-        let nomeFormatado = `${qtd}x ${nome}`;
+        let categoriaPrefix = categoria ? `<span style="font-size: 10px; font-weight: normal; color: #555;">[${categoria}] </span>` : '';
+        let nomeFormatado = `${qtd}x ${categoriaPrefix}${nome}`;
         if (variacao && String(variacao).trim() !== '') {
           nomeFormatado += `<br/><span class="bold">(${String(variacao).trim()})</span>`;
         }
