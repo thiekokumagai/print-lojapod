@@ -30,9 +30,9 @@ function getConfigPath() {
 function loadConfig() {
   try {
     const data = fs.readFileSync(getConfigPath(), 'utf8');
-    return JSON.parse(data);
+    return { paper_width: '80mm', ...JSON.parse(data) };
   } catch (err) {
-    return { token: '', store_id: '', store_name: '', printer: 'auto' };
+    return { token: '', store_id: '', store_name: '', printer: 'auto', paper_width: '80mm' };
   }
 }
 
@@ -79,6 +79,31 @@ function updateTray() {
           updateTray();
         },
       })),
+    },
+    {
+      label: 'Largura da Bobina',
+      submenu: [
+        {
+          label: '80 mm (Padrão - Térmica Grande / Balcão)',
+          type: 'radio',
+          checked: (config.paper_width || '80mm') === '80mm',
+          click: () => {
+            config.paper_width = '80mm';
+            saveConfig({ paper_width: '80mm' });
+            updateTray();
+          },
+        },
+        {
+          label: '58 mm (POS / Maquininha / Mini Impressora)',
+          type: 'radio',
+          checked: config.paper_width === '58mm',
+          click: () => {
+            config.paper_width = '58mm';
+            saveConfig({ paper_width: '58mm' });
+            updateTray();
+          },
+        },
+      ],
     },
     { type: 'separator' },
     {
@@ -467,7 +492,11 @@ async function imprimirPedido(pedido) {
       let chavePagamento = String(metodoPagamento).toLowerCase();
       let txtCartao = tradutorMetodos[metodoPagamento] || tradutorMetodos[chavePagamento] || metodoPagamento;
       if (parcelas > 1) txtCartao += ` em ${parcelas}x`;
-      pagamentoHtml += `<div class="bold" style="margin-top: 4px; font-size: 13px;">Forma de Pagamento: ${txtCartao}</div>`;
+      pagamentoHtml += `
+        <div class="bold" style="margin-top: 6px; font-size: 12px; line-height: 1.3; word-break: break-word;">
+          Forma de Pagamento: ${txtCartao}
+        </div>
+      `;
       
       if ((chavePagamento === 'cash' || chavePagamento === 'dinheiro') && (Number(pedido.changeAmount) > 0 || Number(pedido.change_for) > 0)) {
          let amountProv = Number(pedido.amountProvided || pedido.change_for || 0).toFixed(2).replace('.', ',');
@@ -476,7 +505,7 @@ async function imprimirPedido(pedido) {
          pagamentoHtml += `<div class="bold" style="font-size: 12px;">Valor do troco: R$ ${changeAmt}</div>`;
       }
     } else {
-      pagamentoHtml += `<div class="bold" style="margin-top: 4px; font-size: 13px;">Forma de Pagamento: PIX</div>`;
+      pagamentoHtml += `<div class="bold" style="margin-top: 6px; font-size: 12px;">Forma de Pagamento: PIX</div>`;
     }
 
     // Frete e Total
@@ -497,16 +526,20 @@ async function imprimirPedido(pedido) {
         <div style="font-size: 11px;">Frete: ${freteDisplay}</div>
       </div>
     `;
+    
+    // Valor total só aparece se não foi pago
     if (Number(pedido.totalOrder || pedido.total || 0) > 0 && statusPagamento !== 'PAGO') {
       totalHtml += `
         <div class="total-row" style="margin-top: 4px;">
-          <div class="bold" style="font-size: 11px;">Valor Total</div>
-          <div class="bold" style="font-size: 11px;">R$ ${valorTotal}</div>
+          <div class="bold" style="font-size: 12px;">Valor Total</div>
+          <div class="bold" style="font-size: 12px;">R$ ${valorTotal}</div>
         </div>
       `;
     }
 
     const titleText = config.store_name || (showProductPrices ? 'Loja Pod' : 'Loja Pod');
+    const is58mm = config.paper_width === '58mm';
+    const paperWidthPx = is58mm ? '215px' : '280px';
 
     const receiptHtml = `
       <html>
@@ -517,26 +550,35 @@ async function imprimirPedido(pedido) {
           @page { margin: 0; }
           body { 
             font-family: 'Inter', Arial, sans-serif; 
-            font-size: 11px; 
-            width: 255px;
+            font-size: ${is58mm ? '11px' : '12px'}; 
+            width: ${paperWidthPx};
+            max-width: ${paperWidthPx};
             margin: 0; 
-            padding: 5px 5px;
+            padding: 4px 2px;
             color: black;
-            line-height: 1.2;
+            line-height: 1.25;
+            word-wrap: break-word;
           }
           .center { text-align: center; }
           .bold { font-weight: bold; }
-          .title { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
-          .info-block { margin-top: 8px; }
+          .title { 
+            font-size: ${is58mm ? '14px' : '15px'}; 
+            font-weight: 700; 
+            margin-bottom: 8px; 
+            text-align: center; 
+            width: 100%;
+            display: block;
+          }
+          .info-block { margin-top: 6px; word-break: break-word; }
           .item-row { display: flex; justify-content: space-between; margin-top: 5px; align-items: flex-start; }
-          .item-name { flex: 1; padding-right: 15px; }
+          .item-name { flex: 1; padding-right: 8px; word-break: break-word; }
           .item-price { white-space: nowrap; }
-          .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
-          .footer { margin-top: 10px; font-size: 11px; }
+          .total-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
+          .footer { margin-top: 10px; font-size: 11px; text-align: center; }
         </style>
       </head>
       <body>
-        <div class="center title">${titleText}</div>
+        <div class="title">${titleText}</div>
         
         <div>
           <span class="bold">Pedido:</span> ${numeroPedido}<br>
