@@ -448,7 +448,15 @@ async function imprimirPedido(pedido) {
       'pix': 'Pix',
       'CASH': 'Dinheiro',
       'cash': 'Dinheiro',
-      'money': 'Dinheiro'
+      'money': 'Dinheiro',
+      'meal_voucher': 'Vale Refeição',
+      'vale_refeicao': 'Vale Refeição',
+      'vale refeição': 'Vale Refeição',
+      'vale refeicao': 'Vale Refeição',
+      'food_voucher': 'Vale Alimentação',
+      'vale_alimentacao': 'Vale Alimentação',
+      'vale alimentação': 'Vale Alimentação',
+      'vale alimentacao': 'Vale Alimentação'
     };
     
     if (statusPagamento === 'PAGO') {
