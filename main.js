@@ -30,9 +30,9 @@ function getConfigPath() {
 function loadConfig() {
   try {
     const data = fs.readFileSync(getConfigPath(), 'utf8');
-    return { paper_width: '80mm', ...JSON.parse(data) };
+    return JSON.parse(data);
   } catch (err) {
-    return { token: '', store_id: '', store_name: '', printer: 'auto', paper_width: '80mm' };
+    return { token: '', store_id: '', store_name: '', printer: 'auto' };
   }
 }
 
@@ -79,31 +79,6 @@ function updateTray() {
           updateTray();
         },
       })),
-    },
-    {
-      label: 'Largura da Bobina',
-      submenu: [
-        {
-          label: '80 mm (Padrão - Térmica Grande / Balcão)',
-          type: 'radio',
-          checked: (config.paper_width || '80mm') === '80mm',
-          click: () => {
-            config.paper_width = '80mm';
-            saveConfig({ paper_width: '80mm' });
-            updateTray();
-          },
-        },
-        {
-          label: '58 mm (POS / Maquininha / Mini Impressora)',
-          type: 'radio',
-          checked: config.paper_width === '58mm',
-          click: () => {
-            config.paper_width = '58mm';
-            saveConfig({ paper_width: '58mm' });
-            updateTray();
-          },
-        },
-      ],
     },
     { type: 'separator' },
     {
@@ -492,11 +467,7 @@ async function imprimirPedido(pedido) {
       let chavePagamento = String(metodoPagamento).toLowerCase();
       let txtCartao = tradutorMetodos[metodoPagamento] || tradutorMetodos[chavePagamento] || metodoPagamento;
       if (parcelas > 1) txtCartao += ` em ${parcelas}x`;
-      pagamentoHtml += `
-        <div class="bold" style="margin-top: 6px; font-size: 12px; line-height: 1.3; word-break: break-word;">
-          Forma de Pagamento: ${txtCartao}
-        </div>
-      `;
+      pagamentoHtml += `<div class="bold" style="margin-top: 4px; font-size: 13px;">Forma de Pagamento: ${txtCartao}</div>`;
       
       if ((chavePagamento === 'cash' || chavePagamento === 'dinheiro') && (Number(pedido.changeAmount) > 0 || Number(pedido.change_for) > 0)) {
          let amountProv = Number(pedido.amountProvided || pedido.change_for || 0).toFixed(2).replace('.', ',');
@@ -505,7 +476,7 @@ async function imprimirPedido(pedido) {
          pagamentoHtml += `<div class="bold" style="font-size: 12px;">Valor do troco: R$ ${changeAmt}</div>`;
       }
     } else {
-      pagamentoHtml += `<div class="bold" style="margin-top: 6px; font-size: 12px;">Forma de Pagamento: PIX</div>`;
+      pagamentoHtml += `<div class="bold" style="margin-top: 4px; font-size: 13px;">Forma de Pagamento: PIX</div>`;
     }
 
     // Frete e Total
@@ -526,172 +497,91 @@ async function imprimirPedido(pedido) {
         <div style="font-size: 11px;">Frete: ${freteDisplay}</div>
       </div>
     `;
-    
-    // Valor total só aparece se não foi pago
     if (Number(pedido.totalOrder || pedido.total || 0) > 0 && statusPagamento !== 'PAGO') {
       totalHtml += `
         <div class="total-row" style="margin-top: 4px;">
-          <div class="bold" style="font-size: 12px;">Valor Total</div>
-          <div class="bold" style="font-size: 12px;">R$ ${valorTotal}</div>
+          <div class="bold" style="font-size: 11px;">Valor Total</div>
+          <div class="bold" style="font-size: 11px;">R$ ${valorTotal}</div>
         </div>
       `;
     }
 
     const titleText = config.store_name || (showProductPrices ? 'Loja Pod' : 'Loja Pod');
-    const is58mm = config.paper_width === '58mm';
-    // 80mm original = 255px | 58mm = 180px
-    const paperWidthPx = is58mm ? '170px' : '255px';
 
     const receiptHtml = `
-      <!DOCTYPE html>
       <html>
       <head>
-        <meta charset="UTF-8">
         <style>
-          @page { 
-            margin: 0; 
-            size: auto;
-          }
-          * { 
-            box-sizing: border-box; 
-            margin: 0; 
-            padding: 0; 
-          }
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+          * { box-sizing: border-box; }
+          @page { margin: 0; }
           body { 
-            font-family: Arial, "Segoe UI", -apple-system, sans-serif; 
-            font-size: ${is58mm ? '10px' : '11px'}; 
-            width: ${paperWidthPx};
-            max-width: ${paperWidthPx};
-            margin: 0 auto; 
-            padding: ${is58mm ? '2px 2px 10px 2px' : '5px 5px'};
+            font-family: 'Inter', Arial, sans-serif; 
+            font-size: 11px; 
+            width: 255px;
+            margin: 0; 
+            padding: 5px 5px;
             color: black;
-            line-height: ${is58mm ? '1.2' : '1.2'};
-            word-wrap: break-word;
+            line-height: 1.2;
           }
-          .title { 
-            font-size: ${is58mm ? '11px' : '13px'}; 
-            font-weight: 900; 
-            margin: 4px 0 8px 0; 
-            text-align: center; 
-            width: 100%;
-            display: block;
-          }
-          .bold { font-weight: bold; }
           .center { text-align: center; }
-          .header-info { 
-            margin-bottom: 6px; 
-            padding-bottom: 4px;
-            border-bottom: 1px dashed #000;
-          }
-          .info-block { 
-            margin-top: 5px; 
-            word-break: break-word; 
-          }
-          .item-row { 
-            display: flex; 
-            justify-content: space-between; 
-            margin-top: 4px; 
-            align-items: flex-start; 
-            gap: 4px;
-          }
-          .item-name { 
-            flex: 1; 
-            word-break: break-word; 
-          }
-          .item-price { 
-            white-space: nowrap; 
-            text-align: right;
-          }
-          .total-section {
-            margin-top: 6px;
-            padding-top: 4px;
-            border-top: 1px dashed #000;
-          }
-          .total-row { 
-            display: flex; 
-            justify-content: space-between; 
-            align-items: center;
-            margin-top: 3px; 
-            gap: 4px;
-          }
-          .total-row span:last-child {
-            text-align: right;
-            white-space: nowrap;
-          }
-          .payment-block {
-            margin-top: 6px;
-            padding-top: 4px;
-            border-top: 1px dashed #000;
-            word-break: break-word;
-          }
-          .footer { 
-            margin-top: 10px; 
-            font-size: 10px; 
-            text-align: center; 
-            width: 100%;
-          }
+          .bold { font-weight: bold; }
+          .title { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+          .info-block { margin-top: 8px; }
+          .item-row { display: flex; justify-content: space-between; margin-top: 5px; align-items: flex-start; }
+          .item-name { flex: 1; padding-right: 15px; }
+          .item-price { white-space: nowrap; }
+          .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+          .footer { margin-top: 10px; font-size: 11px; }
         </style>
       </head>
       <body>
-        <div class="title">${titleText}</div>
+        <div class="center title">${titleText}</div>
         
-        <div class="header-info">
-          <div><span class="bold">Pedido:</span> ${numeroPedido}</div>
-          <div><span class="bold">Data:</span> ${dataPedido}</div>
-          <div><span class="bold">Nome:</span> ${nomeCliente}</div>
-          ${telefoneCliente ? `<div>${telefoneCliente}</div>` : ''}
+        <div>
+          <span class="bold">Pedido:</span> ${numeroPedido}<br>
+          <span class="bold">Data:</span> ${dataPedido}<br>
+          <span class="bold">Nome:</span> ${nomeCliente}<br>
+          ${telefoneCliente}
         </div>
 
-        <div style="padding-bottom: 4px;">
-          ${itensHtml}
-        </div>
+        ${itensHtml}
         ${enderecoHtml}
         ${observacaoHtml}
-        
-        <div class="total-section">
-          ${totalHtml}
-        </div>
-        
-        <div class="payment-block">
-          ${pagamentoHtml}
-        </div>
+        ${totalHtml}
+        ${pagamentoHtml}
 
         <div class="footer">Obrigado pela preferência!</div>
       </body>
       </html>
     `;
 
-    // Criar janela oculta para imprimir com dimensões proporcionais
+    // Criar janela oculta para imprimir
     let printWindow = new BrowserWindow({
       show: false,
-      width: is58mm ? 240 : 350,
-      height: 600,
       webPreferences: { nodeIntegration: true }
     });
 
     printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(receiptHtml)}`);
 
     printWindow.webContents.on('did-finish-load', () => {
-      // Pequeno delay para garantir que todo o CSS e layout foram renderizados no DOM do Chromium
-      setTimeout(() => {
-        printWindow.webContents.print({
-          silent: true,
-          printBackground: true,
-          deviceName: currentPrinter,
-        }, (success, failureReason) => {
-          if (!success) {
-            console.error('Falha ao imprimir:', failureReason);
-            dialog.showErrorBox('Erro na Impressora', `Falha técnica ao imprimir o pedido: ${failureReason}`);
-          } else {
-            console.log('Impressão enviada com sucesso!');
-            if (pedido.id && socket) {
-              socket.emit('marcar_como_impresso', pedido.id);
-            }
+      printWindow.webContents.print({
+        silent: true,
+        printBackground: true,
+        deviceName: currentPrinter
+      }, (success, failureReason) => {
+        if (!success) {
+          console.error('Falha ao imprimir:', failureReason);
+          dialog.showErrorBox('Erro na Impressora', `Falha técnica ao imprimir o pedido: ${failureReason}`);
+        } else {
+          console.log('Impressão enviada com sucesso!');
+          if (pedido.id && socket) {
+            socket.emit('marcar_como_impresso', pedido.id);
           }
-          // Fechar janela após imprimir
-          printWindow.close();
-        });
-      }, 300);
+        }
+        // Fechar janela após imprimir
+        printWindow.close();
+      });
     });
 
   } catch (error) {
