@@ -30,9 +30,9 @@ function getConfigPath() {
 function loadConfig() {
   try {
     const data = fs.readFileSync(getConfigPath(), 'utf8');
-    return JSON.parse(data);
+    return { paper_width: '80mm', ...JSON.parse(data) };
   } catch (err) {
-    return { token: '', store_id: '', store_name: '', printer: 'auto' };
+    return { token: '', store_id: '', store_name: '', printer: 'auto', paper_width: '80mm' };
   }
 }
 
@@ -79,6 +79,31 @@ function updateTray() {
           updateTray();
         },
       })),
+    },
+    {
+      label: 'Largura da Bobina',
+      submenu: [
+        {
+          label: '80 mm (Padrão)',
+          type: 'radio',
+          checked: (config.paper_width || '80mm') === '80mm',
+          click: () => {
+            config.paper_width = '80mm';
+            saveConfig({ paper_width: '80mm' });
+            updateTray();
+          },
+        },
+        {
+          label: '58 mm (Maquininha / POS)',
+          type: 'radio',
+          checked: config.paper_width === '58mm',
+          click: () => {
+            config.paper_width = '58mm';
+            saveConfig({ paper_width: '58mm' });
+            updateTray();
+          },
+        },
+      ],
     },
     { type: 'separator' },
     {
@@ -351,8 +376,7 @@ async function imprimirPedido(pedido) {
         let nome = item.nome || item.productName || 'Produto Genérico';
         let variacao = item.variation || item.variationString || item.variacao || '';
         let categoria = item.categoryName || item.product?.category?.title || item.categoria || '';
-
-        let categoriaPrefix = categoria ? `<span style="font-size: 10px; font-weight: normal; color: #555;">[${categoria}] </span>` : '';
+        let categoriaPrefix = categoria ? `[${categoria}] ` : '';
         let nomeFormatado = `${qtd}x ${categoriaPrefix}${nome}`;
         if (variacao && String(variacao).trim() !== '') {
           nomeFormatado += `<br/><span class="bold">(${String(variacao).trim()})</span>`;
@@ -508,6 +532,11 @@ async function imprimirPedido(pedido) {
 
     const titleText = config.store_name || (showProductPrices ? 'Loja Pod' : 'Loja Pod');
 
+    const is58mm = (config.paper_width === '58mm');
+    const paperWidth = is58mm ? '180px' : '255px';
+    const bodyFontSize = is58mm ? '10px' : '11px';
+    const titleFontSize = is58mm ? '12px' : '13px';
+
     const receiptHtml = `
       <html>
       <head>
@@ -517,8 +546,8 @@ async function imprimirPedido(pedido) {
           @page { margin: 0; }
           body { 
             font-family: 'Inter', Arial, sans-serif; 
-            font-size: 11px; 
-            width: 255px;
+            font-size: ${bodyFontSize}; 
+            width: ${paperWidth};
             margin: 0; 
             padding: 5px 5px;
             color: black;
@@ -526,7 +555,7 @@ async function imprimirPedido(pedido) {
           }
           .center { text-align: center; }
           .bold { font-weight: bold; }
-          .title { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
+          .title { font-size: ${titleFontSize}; font-weight: bold; margin-bottom: 8px; }
           .info-block { margin-top: 8px; }
           .item-row { display: flex; justify-content: space-between; margin-top: 5px; align-items: flex-start; }
           .item-name { flex: 1; padding-right: 15px; }

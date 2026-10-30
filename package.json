@@ -1,6 +1,6 @@
 {
   "name": "print-agent",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "Serviço de impressão automática para Vape Shop",
   "main": "main.js",
   "scripts": {
