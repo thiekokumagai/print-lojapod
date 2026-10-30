@@ -539,68 +539,134 @@ async function imprimirPedido(pedido) {
 
     const titleText = config.store_name || (showProductPrices ? 'Loja Pod' : 'Loja Pod');
     const is58mm = config.paper_width === '58mm';
-    const paperWidthPx = is58mm ? '215px' : '280px';
+    // 80mm original = 255px | 58mm = 180px
+    const paperWidthPx = is58mm ? '170px' : '255px';
 
     const receiptHtml = `
+      <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="UTF-8">
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-          * { box-sizing: border-box; }
-          @page { margin: 0; }
+          @page { 
+            margin: 0; 
+            size: auto;
+          }
+          * { 
+            box-sizing: border-box; 
+            margin: 0; 
+            padding: 0; 
+          }
           body { 
             font-family: 'Inter', Arial, sans-serif; 
-            font-size: ${is58mm ? '11px' : '12px'}; 
+            font-size: ${is58mm ? '10px' : '11px'}; 
             width: ${paperWidthPx};
             max-width: ${paperWidthPx};
-            margin: 0; 
-            padding: 4px 2px;
+            margin: 0 auto; 
+            padding: ${is58mm ? '2px 2px 10px 2px' : '5px 5px'};
             color: black;
-            line-height: 1.25;
+            line-height: ${is58mm ? '1.2' : '1.2'};
             word-wrap: break-word;
           }
-          .center { text-align: center; }
-          .bold { font-weight: bold; }
           .title { 
-            font-size: ${is58mm ? '14px' : '15px'}; 
-            font-weight: 700; 
-            margin-bottom: 8px; 
+            font-size: ${is58mm ? '11px' : '13px'}; 
+            font-weight: 900; 
+            margin: 4px 0 8px 0; 
             text-align: center; 
             width: 100%;
             display: block;
           }
-          .info-block { margin-top: 6px; word-break: break-word; }
-          .item-row { display: flex; justify-content: space-between; margin-top: 5px; align-items: flex-start; }
-          .item-name { flex: 1; padding-right: 8px; word-break: break-word; }
-          .item-price { white-space: nowrap; }
-          .total-row { display: flex; justify-content: space-between; margin-bottom: 6px; }
-          .footer { margin-top: 10px; font-size: 11px; text-align: center; }
+          .bold { font-weight: bold; }
+          .center { text-align: center; }
+          .header-info { 
+            margin-bottom: 6px; 
+            padding-bottom: 4px;
+            border-bottom: 1px dashed #000;
+          }
+          .info-block { 
+            margin-top: 5px; 
+            word-break: break-word; 
+          }
+          .item-row { 
+            display: flex; 
+            justify-content: space-between; 
+            margin-top: 4px; 
+            align-items: flex-start; 
+            gap: 4px;
+          }
+          .item-name { 
+            flex: 1; 
+            word-break: break-word; 
+          }
+          .item-price { 
+            white-space: nowrap; 
+            text-align: right;
+          }
+          .total-section {
+            margin-top: 6px;
+            padding-top: 4px;
+            border-top: 1px dashed #000;
+          }
+          .total-row { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center;
+            margin-top: 3px; 
+            gap: 4px;
+          }
+          .total-row span:last-child {
+            text-align: right;
+            white-space: nowrap;
+          }
+          .payment-block {
+            margin-top: 6px;
+            padding-top: 4px;
+            border-top: 1px dashed #000;
+            word-break: break-word;
+          }
+          .footer { 
+            margin-top: 10px; 
+            font-size: 10px; 
+            text-align: center; 
+            width: 100%;
+          }
         </style>
       </head>
       <body>
         <div class="title">${titleText}</div>
         
-        <div>
-          <span class="bold">Pedido:</span> ${numeroPedido}<br>
-          <span class="bold">Data:</span> ${dataPedido}<br>
-          <span class="bold">Nome:</span> ${nomeCliente}<br>
-          ${telefoneCliente}
+        <div class="header-info">
+          <div><span class="bold">Pedido:</span> ${numeroPedido}</div>
+          <div><span class="bold">Data:</span> ${dataPedido}</div>
+          <div><span class="bold">Nome:</span> ${nomeCliente}</div>
+          ${telefoneCliente ? `<div>${telefoneCliente}</div>` : ''}
         </div>
 
-        ${itensHtml}
+        <div style="padding-bottom: 4px;">
+          ${itensHtml}
+        </div>
         ${enderecoHtml}
         ${observacaoHtml}
-        ${totalHtml}
-        ${pagamentoHtml}
+        
+        <div class="total-section">
+          ${totalHtml}
+        </div>
+        
+        <div class="payment-block">
+          ${pagamentoHtml}
+        </div>
 
         <div class="footer">Obrigado pela preferência!</div>
       </body>
       </html>
     `;
 
-    // Criar janela oculta para imprimir
+    // Criar janela oculta para imprimir com dimensões proporcionais
     let printWindow = new BrowserWindow({
       show: false,
+      width: is58mm ? 240 : 350,
+      height: 600,
       webPreferences: { nodeIntegration: true }
     });
 
@@ -610,7 +676,10 @@ async function imprimirPedido(pedido) {
       printWindow.webContents.print({
         silent: true,
         printBackground: true,
-        deviceName: currentPrinter
+        deviceName: currentPrinter,
+        margins: {
+          marginType: 'none'
+        }
       }, (success, failureReason) => {
         if (!success) {
           console.error('Falha ao imprimir:', failureReason);
