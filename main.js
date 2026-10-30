@@ -548,7 +548,6 @@ async function imprimirPedido(pedido) {
       <head>
         <meta charset="UTF-8">
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
           @page { 
             margin: 0; 
             size: auto;
@@ -559,7 +558,7 @@ async function imprimirPedido(pedido) {
             padding: 0; 
           }
           body { 
-            font-family: 'Inter', Arial, sans-serif; 
+            font-family: Arial, "Segoe UI", -apple-system, sans-serif; 
             font-size: ${is58mm ? '10px' : '11px'}; 
             width: ${paperWidthPx};
             max-width: ${paperWidthPx};
@@ -673,26 +672,26 @@ async function imprimirPedido(pedido) {
     printWindow.loadURL(`data:text/html;charset=utf-8,${encodeURIComponent(receiptHtml)}`);
 
     printWindow.webContents.on('did-finish-load', () => {
-      printWindow.webContents.print({
-        silent: true,
-        printBackground: true,
-        deviceName: currentPrinter,
-        margins: {
-          marginType: 'none'
-        }
-      }, (success, failureReason) => {
-        if (!success) {
-          console.error('Falha ao imprimir:', failureReason);
-          dialog.showErrorBox('Erro na Impressora', `Falha técnica ao imprimir o pedido: ${failureReason}`);
-        } else {
-          console.log('Impressão enviada com sucesso!');
-          if (pedido.id && socket) {
-            socket.emit('marcar_como_impresso', pedido.id);
+      // Pequeno delay para garantir que todo o CSS e layout foram renderizados no DOM do Chromium
+      setTimeout(() => {
+        printWindow.webContents.print({
+          silent: true,
+          printBackground: true,
+          deviceName: currentPrinter,
+        }, (success, failureReason) => {
+          if (!success) {
+            console.error('Falha ao imprimir:', failureReason);
+            dialog.showErrorBox('Erro na Impressora', `Falha técnica ao imprimir o pedido: ${failureReason}`);
+          } else {
+            console.log('Impressão enviada com sucesso!');
+            if (pedido.id && socket) {
+              socket.emit('marcar_como_impresso', pedido.id);
+            }
           }
-        }
-        // Fechar janela após imprimir
-        printWindow.close();
-      });
+          // Fechar janela após imprimir
+          printWindow.close();
+        });
+      }, 300);
     });
 
   } catch (error) {
