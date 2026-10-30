@@ -533,7 +533,7 @@ async function imprimirPedido(pedido) {
     const titleText = config.store_name || (showProductPrices ? 'Loja Pod' : 'Loja Pod');
 
     const is58mm = (config.paper_width === '58mm');
-    const paperWidth = is58mm ? '180px' : '255px';
+    const paperWidth = is58mm ? '170px' : '255px';
     const bodyFontSize = is58mm ? '10px' : '11px';
     const titleFontSize = is58mm ? '12px' : '13px';
 
