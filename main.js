@@ -377,7 +377,9 @@ async function imprimirPedido(pedido) {
         let variacao = item.variation || item.variationString || item.variacao || '';
         let categoria = item.categoryName || item.product?.category?.title || item.categoria || '';
         let categoriaPrefix = categoria ? `[${categoria}] ` : '';
-        let nomeFormatado = `${qtd}x ${categoriaPrefix}${nome}`;
+        let isBump = !!(item.isOrderBump || item.orderBumpId);
+        let bumpPrefix = isBump ? `[PEÇA TAMBÉM] ` : '';
+        let nomeFormatado = `${qtd}x ${bumpPrefix}${categoriaPrefix}${nome}`;
         if (variacao && String(variacao).trim() !== '') {
           nomeFormatado += `<br/><span class="bold">(${String(variacao).trim()})</span>`;
         }
