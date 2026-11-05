@@ -502,7 +502,7 @@ async function imprimirPedido(pedido) {
          pagamentoHtml += `<div class="bold" style="font-size: 12px;">Valor do troco: R$ ${changeAmt}</div>`;
       }
     } else {
-      pagamentoHtml += `<div class="bold" style="margin-top: 4px; font-size: 13px;">Forma de Pagamento: PIX</div>`;
+      pagamentoHtml += `<div class="bold" style="margin-top: 4px; font-size: 13px;">Forma de Pagamento: Não informado</div>`;
     }
 
     // Frete e Total
