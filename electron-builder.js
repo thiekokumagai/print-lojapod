@@ -1,6 +1,6 @@
 module.exports = {
   appId: 'com.vapeshop.printagent',
-  productName: 'Loja Pod',
+  productName: 'Podi Pedir',
   artifactName: 'print-agent-setup.exe',
   files: [
     '**/*',
@@ -18,7 +18,7 @@ module.exports = {
     allowToChangeInstallationDirectory: false,
     createDesktopShortcut: true,
     createStartMenuShortcut: true,
-    shortcutName: 'Loja Pod',
+    shortcutName: 'Podi Pedir',
     installerIcon: 'icon.ico',
     uninstallerIcon: 'icon.ico'
   }

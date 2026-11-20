@@ -27,6 +27,28 @@ function getConfigPath() {
   return path.join(app.getPath('userData'), 'print_agent_config.json');
 }
 
+// Ao renomear o app (Loja Pod -> Podi Pedir) a pasta userData pode mudar.
+// Copia a configuração/ativação da pasta antiga para não exigir nova ativação.
+function migrateOldConfig() {
+  try {
+    const target = getConfigPath();
+    if (fs.existsSync(target)) return;
+    const appData = app.getPath('appData');
+    for (const oldName of ['Loja Pod', 'print-agent']) {
+      const oldPath = path.join(appData, oldName, 'print_agent_config.json');
+      if (oldPath !== target && fs.existsSync(oldPath)) {
+        fs.mkdirSync(path.dirname(target), { recursive: true });
+        fs.copyFileSync(oldPath, target);
+        console.log('Configuração migrada de', oldPath);
+        return;
+      }
+    }
+  } catch (err) {
+    console.error('Erro ao migrar config antiga:', err);
+  }
+}
+migrateOldConfig();
+
 function loadConfig() {
   try {
     const data = fs.readFileSync(getConfigPath(), 'utf8');
@@ -55,7 +77,7 @@ function updateTray() {
   const storeName = config.store_name ? ` (${config.store_name})` : '';
 
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Impressora - Loja Pod', enabled: false },
+    { label: 'Impressora - Podi Pedir', enabled: false },
     { type: 'separator' },
     { label: `Status: ${statusText}${storeName}`, enabled: false },
     { label: `Impressora: ${currentPrinter}`, enabled: false },
@@ -132,7 +154,7 @@ function updateTray() {
     },
   ]);
   tray.setContextMenu(contextMenu);
-  tray.setToolTip(`Loja Pod Impressora - ${statusText}${storeName}`);
+  tray.setToolTip(`Podi Pedir Impressora - ${statusText}${storeName}`);
 }
 
 function loadAvailablePrinters() {
@@ -219,7 +241,7 @@ function openActivationWindow(initialError = '') {
     width: 440,
     height: 480,
     resizable: false,
-    title: 'Ativação da Impressora - Loja Pod',
+    title: 'Ativação da Impressora - Podi Pedir',
     icon: path.join(__dirname, 'icon.png'),
     webPreferences: {
       nodeIntegration: true,
@@ -258,7 +280,7 @@ function openActivationWindow(initialError = '') {
 
       <button id="btn" onclick="submitToken()">Ativar Impressora</button>
 
-      <div class="info">Loja Pod Agent v1.0.0</div>
+      <div class="info">Podi Pedir Agent v1.0.0</div>
 
       <script>
         const { ipcRenderer } = require('electron');
@@ -532,7 +554,7 @@ async function imprimirPedido(pedido) {
       `;
     }
 
-    const titleText = config.store_name || (showProductPrices ? 'Loja Pod' : 'Loja Pod');
+    const titleText = config.store_name || 'Podi Pedir';
 
     const is58mm = (config.paper_width === '58mm');
     const paperWidth = is58mm ? '170px' : '255px';

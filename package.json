@@ -1,7 +1,7 @@
 {
   "name": "print-agent",
-  "version": "1.0.28",
-  "description": "Serviço de impressão automática para Vape Shop",
+  "version": "1.0.29",
+  "description": "Serviço de impressão automática do Podi Pedir",
   "main": "main.js",
   "scripts": {
     "start": "electron .",

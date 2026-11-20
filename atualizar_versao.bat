@@ -1,9 +1,10 @@
 @echo off
 chcp 65001 >nul
 echo ==============================================
-echo INICIANDO BUILD DA LOJA POD...
+echo INICIANDO BUILD DO PODI PEDIR...
 echo ==============================================
 
+taskkill /f /im "Podi Pedir.exe" 2>nul
 taskkill /f /im "Loja Pod.exe" 2>nul
 taskkill /f /im "print-agent-setup.exe" 2>nul
 
