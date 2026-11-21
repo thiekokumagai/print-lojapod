@@ -1,4 +1,5 @@
 const { app, Tray, Menu, nativeImage, dialog, BrowserWindow, ipcMain } = require('electron');
+const { autoUpdater } = require('electron-updater');
 require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 const { io } = require('socket.io-client');
 const { execSync } = require('child_process');
@@ -11,6 +12,8 @@ let currentPrinter = 'Buscando...';
 let availablePrinters = [];
 let socket = null;
 let activationWindow = null;
+let isManualUpdateCheck = false;
+let isCheckingForUpdates = false;
 
 // Esconde o ícone na dock do macOS (se for rodar no mac)
 if (app.dock) app.dock.hide();
@@ -77,7 +80,7 @@ function updateTray() {
   const storeName = config.store_name ? ` (${config.store_name})` : '';
 
   const contextMenu = Menu.buildFromTemplate([
-    { label: 'Impressora - Podi Pedir', enabled: false },
+    { label: `Impressora - Podi Pedir (v${app.getVersion()})`, enabled: false },
     { type: 'separator' },
     { label: `Status: ${statusText}${storeName}`, enabled: false },
     { label: `Impressora: ${currentPrinter}`, enabled: false },
@@ -142,6 +145,13 @@ function updateTray() {
           number: '123',
           neighborhood: 'Bairro',
         });
+      },
+    },
+    { type: 'separator' },
+    {
+      label: 'Verificar atualizações',
+      click: () => {
+        checkForUpdates(true);
       },
     },
     { type: 'separator' },
@@ -367,6 +377,16 @@ ipcMain.on('validate-token', async (event, token) => {
   }
 });
 
+function escapeHtml(text) {
+  if (!text) return '';
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 async function imprimirPedido(pedido) {
   try {
     if (pedido.status === 'CANCELLED' || pedido.status === 'cancelado' || String(pedido.status).toUpperCase() === 'CANCELED') {
@@ -382,6 +402,7 @@ async function imprimirPedido(pedido) {
     let itensHtml = '';
     const listaItens = pedido.items || pedido.orderItems || pedido.itens || [];
     
+    const is58mm = (config.paper_width === '58mm');
     const showProductPrices = pedido.showProductPrices !== false;
 
     if (listaItens && listaItens.length > 0) {
@@ -415,6 +436,27 @@ async function imprimirPedido(pedido) {
             const compNome = comp.productName || 'Produto';
             const compVar = comp.variation ? ` (${comp.variation})` : '';
             nomeFormatado += `• ${compQtd}x ${compNome}${compVar}<br/>`;
+          });
+          nomeFormatado += `</div>`;
+        }
+
+        // Se for produto customizado (composição por etapas), listar etapas e opções escolhidas
+        const isCustom = item.isCustomized || (item.customizationSnapshot && item.customizationSnapshot.stages);
+        if (isCustom && item.customizationSnapshot && Array.isArray(item.customizationSnapshot.stages)) {
+          const fontSize = is58mm ? '9.5px' : '10.5px';
+          const paddingLeft = is58mm ? '4px' : '8px';
+          nomeFormatado += `<div style="font-size: ${fontSize}; padding-left: ${paddingLeft}; margin-top: 2px; line-height: 1.25; word-break: break-word; overflow-wrap: break-word; color: #222;">`;
+          item.customizationSnapshot.stages.forEach(stage => {
+            const safeGroupName = escapeHtml(stage.groupName || 'Etapa');
+            const opcoes = (stage.options || []).map(opt => {
+              const optQtd = opt.quantity > 1 ? `${opt.quantity}x ` : '';
+              const safeOptName = escapeHtml(opt.name || 'Opção');
+              const optPrice = (showProductPrices && opt.totalPrice > 0) ? ` (+R$ ${Number(opt.totalPrice).toFixed(2)})` : '';
+              return `${optQtd}${safeOptName}${optPrice}`;
+            }).join(', ');
+            if (opcoes) {
+              nomeFormatado += `<div style="margin-top: 1px; word-break: break-word; overflow-wrap: break-word;">• <b>[${safeGroupName}]</b>: ${opcoes}</div>`;
+            }
           });
           nomeFormatado += `</div>`;
         }
@@ -556,7 +598,6 @@ async function imprimirPedido(pedido) {
 
     const titleText = config.store_name || 'Podi Pedir';
 
-    const is58mm = (config.paper_width === '58mm');
     const paperWidth = is58mm ? '170px' : '255px';
     const bodyFontSize = is58mm ? '10px' : '11px';
     const titleFontSize = is58mm ? '12px' : '13px';
@@ -581,8 +622,8 @@ async function imprimirPedido(pedido) {
           .bold { font-weight: bold; }
           .title { font-size: ${titleFontSize}; font-weight: bold; margin-bottom: 8px; }
           .info-block { margin-top: 8px; }
-          .item-row { display: flex; justify-content: space-between; margin-top: 5px; align-items: flex-start; }
-          .item-name { flex: 1; padding-right: 15px; }
+          .item-row { display: flex; justify-content: space-between; margin-top: 5px; align-items: flex-start; word-break: break-word; }
+          .item-name { flex: 1; padding-right: ${is58mm ? '8px' : '15px'}; word-break: break-word; overflow-wrap: break-word; }
           .item-price { white-space: nowrap; }
           .total-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
           .footer { margin-top: 10px; font-size: 11px; }
@@ -646,6 +687,115 @@ async function imprimirPedido(pedido) {
   }
 }
 
+
+const UPDATE_CHECK_INTERVAL_MS = 3 * 60 * 60 * 1000; // 3 horas
+
+function setupAutoUpdater() {
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true;
+
+  autoUpdater.on('checking-for-update', () => {
+    isCheckingForUpdates = true;
+  });
+
+  autoUpdater.on('update-available', (info) => {
+    console.log('Nova versão disponível:', info && info.version);
+    if (isManualUpdateCheck) {
+      isManualUpdateCheck = false;
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Atualização disponível',
+        message: `Nova versão (v${info.version}) encontrada.`,
+        detail: 'O download foi iniciado em segundo plano. Avisaremos quando estiver pronta para instalar.',
+        buttons: ['OK'],
+      });
+    }
+  });
+
+  autoUpdater.on('update-not-available', () => {
+    isCheckingForUpdates = false;
+    if (isManualUpdateCheck) {
+      isManualUpdateCheck = false;
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Sem atualizações',
+        message: `Você já está na versão mais recente (v${app.getVersion()}).`,
+        buttons: ['OK'],
+      });
+    }
+  });
+
+  autoUpdater.on('update-downloaded', (info) => {
+    isCheckingForUpdates = false;
+    isManualUpdateCheck = false;
+    dialog
+      .showMessageBox({
+        type: 'info',
+        title: 'Atualização pronta',
+        message: `A versão v${info.version} foi baixada.`,
+        detail: 'Deseja reiniciar o Podi Pedir agora para instalar a atualização? Se preferir, ela será instalada ao fechar o programa.',
+        buttons: ['Reiniciar e atualizar', 'Depois'],
+        defaultId: 0,
+        cancelId: 1,
+      })
+      .then(({ response }) => {
+        if (response === 0) {
+          app.isQuiting = true;
+          autoUpdater.quitAndInstall();
+        }
+      })
+      .catch((err) => {
+        console.error('Erro ao exibir diálogo de atualização:', err);
+      });
+  });
+
+  autoUpdater.on('error', (err) => {
+    isCheckingForUpdates = false;
+    console.error('Erro ao verificar atualizações:', err && err.message ? err.message : err);
+    if (isManualUpdateCheck) {
+      isManualUpdateCheck = false;
+      dialog.showMessageBox({
+        type: 'warning',
+        title: 'Erro ao verificar atualizações',
+        message: 'Não foi possível verificar atualizações agora.',
+        detail: 'Verifique sua conexão com a internet e tente novamente mais tarde.',
+        buttons: ['OK'],
+      });
+    }
+  });
+}
+
+function checkForUpdates(manual = false) {
+  if (!app.isPackaged) {
+    if (manual) {
+      dialog.showMessageBox({
+        type: 'info',
+        title: 'Modo desenvolvimento',
+        message: 'A verificação de atualizações só funciona na versão instalada (.exe).',
+        buttons: ['OK'],
+      });
+    }
+    return;
+  }
+
+  if (isCheckingForUpdates) return;
+  isManualUpdateCheck = manual;
+
+  autoUpdater.checkForUpdates().catch((err) => {
+    isCheckingForUpdates = false;
+    console.error('Falha na checagem de atualizações:', err && err.message ? err.message : err);
+    if (isManualUpdateCheck) {
+      isManualUpdateCheck = false;
+      dialog.showMessageBox({
+        type: 'warning',
+        title: 'Erro ao verificar atualizações',
+        message: 'Não foi possível verificar atualizações agora.',
+        buttons: ['OK'],
+      });
+    }
+  });
+}
+
 app.whenReady().then(() => {
   const iconPath = path.join(__dirname, 'icon.png');
   const icon = nativeImage.createFromPath(iconPath);
@@ -662,6 +812,10 @@ app.whenReady().then(() => {
   updateTray();
 
   connectSocket();
+
+  setupAutoUpdater();
+  setTimeout(() => checkForUpdates(false), 10000);
+  setInterval(() => checkForUpdates(false), UPDATE_CHECK_INTERVAL_MS);
 });
 
 app.on('window-all-closed', (e) => e.preventDefault());

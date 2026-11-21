@@ -1,16 +1,27 @@
+const fs = require('fs');
+const path = require('path');
+
+const files = ['**/*', 'icon.png'];
+if (fs.existsSync(path.join(__dirname, '.env'))) {
+  files.push('.env');
+}
+
 module.exports = {
   appId: 'com.vapeshop.printagent',
   productName: 'Podi Pedir',
   artifactName: 'print-agent-setup.exe',
-  files: [
-    '**/*',
-    '.env',
-    'icon.png'
+  files,
+  publish: [
+    {
+      provider: 'github',
+      owner: 'thiekokumagai',
+      repo: 'print-lojapod',
+    },
   ],
   win: {
     target: 'nsis',
     icon: 'icon.ico',
-    requestedExecutionLevel: 'asInvoker'
+    requestedExecutionLevel: 'asInvoker',
   },
   nsis: {
     oneClick: true,
@@ -20,6 +31,6 @@ module.exports = {
     createStartMenuShortcut: true,
     shortcutName: 'Podi Pedir',
     installerIcon: 'icon.ico',
-    uninstallerIcon: 'icon.ico'
-  }
+    uninstallerIcon: 'icon.ico',
+  },
 };
