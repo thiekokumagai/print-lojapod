@@ -16,6 +16,7 @@ module.exports = {
       provider: 'github',
       owner: 'thiekokumagai',
       repo: 'print-lojapod',
+      releaseType: 'release',
     },
   ],
   win: {
