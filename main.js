@@ -460,6 +460,14 @@ async function imprimirPedido(pedido) {
           });
           nomeFormatado += `</div>`;
         }
+
+        // Observação opcional por item (ex.: sem cebola)
+        const itemObs = typeof item.observation === 'string' ? item.observation.trim() : '';
+        if (itemObs) {
+          const obsFontSize = is58mm ? '9.5px' : '10.5px';
+          const obsPaddingLeft = is58mm ? '4px' : '8px';
+          nomeFormatado += `<div style="font-size: ${obsFontSize}; padding-left: ${obsPaddingLeft}; margin-top: 2px; line-height: 1.25; word-break: break-word; overflow-wrap: break-word; color: #111;"><b>Obs:</b> ${escapeHtml(itemObs)}</div>`;
+        }
         
         if (showProductPrices) {
           itensHtml += `
