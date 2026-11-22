@@ -27,11 +27,11 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Instalar dependências
-        shell: bash
+        shell: pwsh
         run: npm ci
 
       - name: Subir versão patch e publicar tag
@@ -43,7 +43,13 @@ jobs:
           git push origin HEAD:main --follow-tags
 
       - name: Gerar e publicar instalador Windows
-        shell: bash
+        shell: pwsh
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npx electron-builder --config electron-builder.js --win --publish always
+        run: |
+          node ./node_modules/electron-builder/out/cli/cli.js --config electron-builder.js --win --publish always
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path "dist/print-agent-setup.exe") -or -not (Test-Path "dist/latest.yml")) {
+            Write-Error "Build não gerou dist/print-agent-setup.exe ou dist/latest.yml"
+            exit 1
+          }
