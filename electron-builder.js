@@ -33,5 +33,7 @@ module.exports = {
     shortcutName: 'Podi Pedir',
     installerIcon: 'icon.ico',
     uninstallerIcon: 'icon.ico',
+    deleteAppDataOnUninstall: true,
+    include: 'installer.nsh',
   },
 };
