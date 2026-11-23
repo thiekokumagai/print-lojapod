@@ -44,6 +44,15 @@ jobs:
           git push origin HEAD:main --follow-tags
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Gerar .env para o build
+        shell: pwsh
+        env:
+          API_URL: ${{ vars.API_URL || secrets.API_URL }}
+        run: |
+          if ($env:API_URL) {
+            Set-Content -Path ".env" -Value "API_URL=$($env:API_URL)" -NoNewline -Encoding UTF8
+          }
+
       - name: Gerar instalador Windows
         shell: pwsh
         run: |
