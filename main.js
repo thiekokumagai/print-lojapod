@@ -387,6 +387,19 @@ function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
+/**
+ * Linha do peso de um item vendido por peso. A API manda `weightKg` e `unitPricePerKg`
+ * (Decimal do banco chega como texto, ex.: "0.650"). Itens comuns não têm peso: devolve ''.
+ */
+function formatarLinhaPeso(item, mostrarPreco = true) {
+  const kg = Number(item && item.weightKg);
+  if (!(kg > 0)) return '';
+  const pesoTxt = `${kg.toFixed(3).replace('.', ',')} kg`;
+  const porKg = Number(item.unitPricePerKg);
+  if (!mostrarPreco || !(porKg > 0)) return pesoTxt;
+  return `${pesoTxt} × R$ ${porKg.toFixed(2).replace('.', ',')}/kg`;
+}
+
 async function imprimirPedido(pedido) {
   try {
     if (pedido.status === 'CANCELLED' || pedido.status === 'cancelado' || String(pedido.status).toUpperCase() === 'CANCELED') {
@@ -425,6 +438,12 @@ async function imprimirPedido(pedido) {
         let nomeFormatado = `${qtd}x ${bumpPrefix}${categoriaPrefix}${nome}`;
         if (variacao && String(variacao).trim() !== '') {
           nomeFormatado += `<br/><span class="bold">(${String(variacao).trim()})</span>`;
+        }
+
+        // Venda por peso (balança): "0,650 kg × R$ 69,90/kg"; sem preços no cupom, só o peso
+        const linhaPeso = formatarLinhaPeso(item, showProductPrices);
+        if (linhaPeso) {
+          nomeFormatado += `<div style="font-size: ${is58mm ? '9.5px' : '10.5px'}; padding-left: ${is58mm ? '4px' : '8px'}; margin-top: 1px;">${linhaPeso}</div>`;
         }
 
         // Se for combo, listar componentes detalhados para separação e conferência
