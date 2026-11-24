@@ -1,6 +1,6 @@
 {
   "name": "print-agent",
-  "version": "1.0.49",
+  "version": "1.0.50",
   "description": "Serviço de impressão automática do Podi Pedir",
   "main": "main.js",
   "scripts": {
